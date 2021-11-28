@@ -1,0 +1,51 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        id: release
+        with:
+          release-type: python
+          package-name: portsel
+
+      - uses: actions/checkout@v2
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install poetry
+        run: |
+          make poetry-download
+      
+      - name: Build package
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          poetry build
+
+      # - name: Publish to PyPI
+      #   if: ${{ steps.release.outputs.release_created }}
+      #   run: | 
+      #     poetry publish -u {{ secrets.PYPI_USERNAME }} -p {{ secrets.PYPI_PASSWORD }}
+
+      # - name: Publish to Registry
+      #   if: ${{ steps.release.outputs.release_created }}
+      #   uses: elgohr/Publish-Docker-Github-Action@3.01
+      #   with:
+      #     name: thomasbtf/portsel
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_TOKEN }}
+      #     tags: "v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}.${{ steps.release.outputs.patch }},stable"
